@@ -24,12 +24,26 @@ function isEndOfTag(c) {
   return ">" === c;
 }
 
+function removeEmptyChildren(stack) {
+  return stack.map((elem) => {
+    if (Array.isArray(elem.children)) {
+      if (elem.children.length === 0) {
+        delete elem.children;
+      } else {
+        elem.children = removeEmptyChildren(elem.children);
+      }
+    }
+    return elem;
+  });
+}
+
 function parse(htmlString) {
   let currentChar;
   let index = 0;
   let modeStack = [];
   let currentTag;
-  let parsedHTML = [];
+  let parsedHTML = []; // top level stack
+  let htmlStack = parsedHTML;
 
   function changeMode(shouldInvoke) {
     modeStack.pop();
@@ -49,8 +63,13 @@ function parse(htmlString) {
         currentTag.tagName = currentChar;
         modeStack.push(modes.tagName);
       } else if (isEndOfTag(currentChar)) {
-        parsedHTML.push(currentTag);
+        console.log(htmlStack, parsedHTML);
+        htmlStack.push(currentTag);
         changeMode();
+        if (!SELF_CLOSING_TAGS.has(currentTag.tagName.toLowerCase())) {
+          currentTag.children = [];
+          htmlStack = currentTag.children;
+        }
       }
     },
     closingTag() {
@@ -81,7 +100,7 @@ function parse(htmlString) {
     index++;
   }
 
-  return parsedHTML;
+  return removeEmptyChildren(parsedHTML);
 }
 
 export default class Parser {

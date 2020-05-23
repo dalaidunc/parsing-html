@@ -19,11 +19,20 @@ describe("gets a tagName from html", () => {
 });
 
 describe("children tags", () => {
-  test("gets 2 tags", () => {
-    const html = "<div><div></div></div>";
+  test("2 tags", () => {
+    const html = "<div><span></span></div>";
     const parser = new Parser(html);
+    console.log(parser.parsedHTML);
     expect(parser.parsedHTML).toEqual([
-      { tagName: "div", children: [{ tagName: "div" }] },
+      { tagName: "div", children: [{ tagName: "span" }] },
+    ]);
+  });
+  test("2 tags, inner is self-closing tag", () => {
+    const html = "<div><br /></div>";
+    const parser = new Parser(html);
+    console.log(parser.parsedHTML);
+    expect(parser.parsedHTML).toEqual([
+      { tagName: "div", children: [{ tagName: "br" }] },
     ]);
   });
 });
