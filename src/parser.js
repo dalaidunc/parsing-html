@@ -31,25 +31,32 @@ function parse(htmlString) {
   let currentTag;
   let parsedHTML = [];
 
+  function changeMode(shouldInvoke) {
+    modeStack.pop();
+    if (shouldInvoke) {
+      const nextMode = modeStack[modeStack.length - 1];
+      nextMode();
+    }
+  }
+
   const modes = {
-    tag(currentChar) {
+    tag() {
       if (!currentTag.tagName) {
         currentTag.tagName = currentChar;
         modeStack.push(modes.tagName);
       } else if (isEndOfTag(currentChar)) {
         parsedHTML.push(currentTag);
-        modeStack.pop();
+        changeMode();
       }
     },
-    tagName(currentChar) {
+    tagName() {
       if (isWord(currentChar)) {
         currentTag.tagName += currentChar;
       } else {
-        const altMode = modeStack.pop();
-        altMode(currentChar);
+        changeMode(true);
       }
     },
-    defaultMode(currentChar) {
+    defaultMode() {
       if (currentChar === "<") {
         currentTag = {};
         modeStack.push(modes.tag);
@@ -59,7 +66,7 @@ function parse(htmlString) {
 
   while ((currentChar = htmlString.charAt(index))) {
     const mode = modeStack[modeStack.length - 1] || modes.defaultMode;
-    mode(currentChar);
+    mode();
     index++;
   }
 
