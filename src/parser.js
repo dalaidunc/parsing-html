@@ -42,11 +42,22 @@ function parse(htmlString) {
   const modes = {
     tag() {
       if (!currentTag.tagName) {
+        if (currentChar === "/") {
+          // closing tag - ignore
+          modeStack.push(modes.closingTag);
+        }
         currentTag.tagName = currentChar;
         modeStack.push(modes.tagName);
       } else if (isEndOfTag(currentChar)) {
         parsedHTML.push(currentTag);
         changeMode();
+      }
+    },
+    closingTag() {
+      // More robust to tokenize the closing tag name and ensure it matches the current tag name
+      if (isEndOfTag(currentChar)) {
+        changeMode(); // back to tag mode
+        changeMode(); // tag is closed so go back one more mode
       }
     },
     tagName() {
