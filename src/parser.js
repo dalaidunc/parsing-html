@@ -43,7 +43,7 @@ function parse(htmlString) {
   let modeStack = [];
   let currentTag;
   let parsedHTML = []; // top level stack
-  let htmlStack = parsedHTML;
+  const htmlStacks = [parsedHTML];
 
   function changeMode(shouldInvoke) {
     modeStack.pop();
@@ -63,12 +63,12 @@ function parse(htmlString) {
         currentTag.tagName = currentChar;
         modeStack.push(modes.tagName);
       } else if (isEndOfTag(currentChar)) {
-        console.log(htmlStack, parsedHTML);
+        const htmlStack = htmlStacks[htmlStacks.length - 1];
         htmlStack.push(currentTag);
         changeMode();
         if (!SELF_CLOSING_TAGS.has(currentTag.tagName.toLowerCase())) {
           currentTag.children = [];
-          htmlStack = currentTag.children;
+          htmlStacks.push(currentTag.children);
         }
       }
     },
@@ -77,6 +77,7 @@ function parse(htmlString) {
       if (isEndOfTag(currentChar)) {
         changeMode(); // back to tag mode
         changeMode(); // tag is closed so go back one more mode
+        htmlStacks.pop(); // no longer getting children of the closed tag
       }
     },
     tagName() {
