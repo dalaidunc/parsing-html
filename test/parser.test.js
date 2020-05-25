@@ -50,3 +50,30 @@ describe("children tags", () => {
     ]);
   });
 });
+
+describe("gets attributes for a tag correctly", () => {
+  test("attribute of a single tag", () => {
+    const html = "<div class='main'></div>";
+    const parser = new Parser(html);
+    expect(parser.parsedHTML).toEqual([
+      {
+        tagName: "div",
+        attributes: {
+          class: "main",
+        },
+      },
+    ]);
+  });
+  test("attribute of a single tag, no quotes around attribute value", () => {
+    const html = "<div class=main></div>";
+    const parser = new Parser(html);
+    expect(parser.parsedHTML).toEqual([
+      {
+        tagName: "div",
+        attributes: {
+          class: "main",
+        },
+      },
+    ]);
+  });
+});

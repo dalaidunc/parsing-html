@@ -20,6 +20,10 @@ function isWord(c) {
   return /^[a-zA-Z]+$/.test(c);
 }
 
+function isValidAttributeName(c) {
+  return /\w/.test(c);
+}
+
 function isEndOfTag(c) {
   return ">" === c;
 }
@@ -44,6 +48,21 @@ function parse(htmlString) {
   let currentTag;
   let parsedHTML = []; // top level stack
   const htmlStacks = [parsedHTML];
+  let currentAttribute = {
+    name: "",
+    value: "",
+    valueWrapChar: null,
+  };
+
+  function addAttribute() {
+    currentTag.attributes = currentTag.attributes || {};
+    currentTag.attributes[currentAttribute.name] = currentAttribute.value;
+    currentAttribute = {
+      name: "",
+      value: "",
+      valueWrapChar: null,
+    };
+  }
 
   function changeMode(shouldInvoke) {
     modeStack.pop();
@@ -54,8 +73,36 @@ function parse(htmlString) {
   }
 
   const modes = {
+    attributeName() {
+      if (isValidAttributeName(currentChar)) {
+        currentAttribute.name += currentChar;
+      } else if (currentChar === "=") {
+        modeStack.push(modes.attributeValue);
+      } else {
+        addAttribute();
+        changeMode(true);
+      }
+    },
+    attributeValue() {
+      if (!currentAttribute.valueWrapChar) {
+        if (currentChar === `'` || currentChar === `"`) {
+          currentAttribute.valueWrapChar = currentChar;
+        } else if (currentChar === " " || isEndOfTag(currentChar)) {
+          changeMode(true);
+        } else {
+          currentAttribute.value += currentChar;
+        }
+      } else if (currentAttribute.valueWrapChar === currentChar) {
+        changeMode();
+      } else {
+        currentAttribute.value += currentChar;
+      }
+    },
     tag() {
-      if (!currentTag.tagName) {
+      if (currentTag.tagName && isValidAttributeName(currentChar)) {
+        modes.attributeName();
+        modeStack.push(modes.attributeName);
+      } else if (!currentTag.tagName) {
         if (currentChar === "/") {
           // closing tag - ignore
           modeStack.push(modes.closingTag);
