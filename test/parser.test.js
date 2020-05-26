@@ -76,4 +76,19 @@ describe("gets attributes for a tag correctly", () => {
       },
     ]);
   });
+  test("multiple attributes", () => {
+    const html = "<a class='aaa bbb' href='#'></a>";
+    const parser = new Parser(html);
+    expect(parser.parsedHTML).toEqual([
+      {
+        tagName: "a",
+        attributes: {
+          class: "aaa bbb",
+          href: "#",
+        },
+      },
+    ]);
+  });
 });
+
+describe("get text within tags", () => {});
