@@ -16,8 +16,8 @@ const SELF_CLOSING_TAGS = new Set([
   "wbr",
 ]);
 
-function isWord(c) {
-  return /^[a-zA-Z]+$/.test(c);
+function isValidTagName(c) {
+  return /[a-zA-Z0-9\-]/.test(c);
 }
 
 function isValidAttributeName(c) {
@@ -53,6 +53,7 @@ function parse(htmlString) {
     value: "",
     valueWrapChar: null,
   };
+  let currentText = "";
 
   function addAttribute() {
     currentTag.attributes = currentTag.attributes || {};
@@ -68,8 +69,18 @@ function parse(htmlString) {
     modeStack.pop();
     if (shouldInvoke) {
       const nextMode = modeStack[modeStack.length - 1];
-      nextMode();
+      if (nextMode) {
+        nextMode();
+      } else {
+        modes.defaultMode();
+      }
     }
+  }
+
+  function addToCurrentStack(thing) {
+    const stack = htmlStacks[htmlStacks.length - 1];
+    stack.push(thing);
+    return stack;
   }
 
   const modes = {
@@ -110,8 +121,7 @@ function parse(htmlString) {
         currentTag.tagName = currentChar;
         modeStack.push(modes.tagName);
       } else if (isEndOfTag(currentChar)) {
-        const htmlStack = htmlStacks[htmlStacks.length - 1];
-        htmlStack.push(currentTag);
+        addToCurrentStack(currentTag);
         changeMode();
         if (!SELF_CLOSING_TAGS.has(currentTag.tagName.toLowerCase())) {
           currentTag.children = [];
@@ -128,16 +138,28 @@ function parse(htmlString) {
       }
     },
     tagName() {
-      if (isWord(currentChar)) {
+      if (isValidTagName(currentChar)) {
         currentTag.tagName += currentChar;
       } else {
         changeMode(true);
+      }
+    },
+    text() {
+      if (currentChar === "<") {
+        addToCurrentStack(currentText);
+        currentText = "";
+        changeMode(true);
+      } else {
+        currentText += currentChar;
       }
     },
     defaultMode() {
       if (currentChar === "<") {
         currentTag = {};
         modeStack.push(modes.tag);
+      } else {
+        modes.text(currentChar);
+        modeStack.push(modes.text);
       }
     },
   };
@@ -146,6 +168,10 @@ function parse(htmlString) {
     const mode = modeStack[modeStack.length - 1] || modes.defaultMode;
     mode();
     index++;
+  }
+
+  if (currentText) {
+    addToCurrentStack(currentText);
   }
 
   return removeEmptyChildren(parsedHTML);

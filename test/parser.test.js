@@ -91,4 +91,73 @@ describe("gets attributes for a tag correctly", () => {
   });
 });
 
-describe("get text within tags", () => {});
+describe("get text within tags", () => {
+  test("text within one attribute", () => {
+    const html = "<body>My text</body>";
+    const parser = new Parser(html);
+    expect(parser.parsedHTML).toEqual([
+      {
+        tagName: "body",
+        children: ["My text"],
+      },
+    ]);
+  });
+  test("sibling text", () => {
+    const html = "<body><div>My text<span> hello </span> yes</div></body>";
+    const parser = new Parser(html);
+    expect(parser.parsedHTML).toEqual([
+      {
+        tagName: "body",
+        children: [
+          {
+            tagName: "div",
+            children: [
+              "My text",
+              {
+                tagName: "span",
+                children: [" hello "],
+              },
+              " yes",
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+});
+
+describe("complete example", () => {
+  test("full html", () => {
+    const html = `
+      <html><body class='container' style='background: "blue";'><h1>Header</h1><a href='localhost:8080'>my website</a></body></html>
+    `.trim();
+    const parser = new Parser(html);
+    expect(parser.parsedHTML).toEqual([
+      {
+        tagName: "html",
+        children: [
+          {
+            tagName: "body",
+            attributes: {
+              class: "container",
+              style: 'background: "blue";',
+            },
+            children: [
+              {
+                tagName: "h1",
+                children: ["Header"],
+              },
+              {
+                tagName: "a",
+                attributes: {
+                  href: "localhost:8080",
+                },
+                children: ["my website"],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+});
